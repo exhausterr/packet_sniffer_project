@@ -71,16 +71,16 @@ This tool is intended for educational use only. Do not use it on networks withou
 Developed by [exhausterr](https://github.com/exhausterr) as the final project for a cybersecurity internship.  
 Built using Python with raw sockets, threading, protocol dissection, and a Tkinter-based GUI interface. 
 
-## 📷 Screenshots
+## 📸 Screenshots
 
 ### GUI Interface  
-![GUI](screenshots/readme-h.png)
+![GUI Interface](screenShots/gui-interface.png)
 
-### Clear Command  
-![Clear](screenshots/readme-4.png)
+### Clear Command Example  
+![Clear Command](screenShots/command-clear-example.png)
 
-### Interface and Filter Options  
-![Filter](screenshots/readme-3.png)
+### Interface and Filter Selection  
+![Interface Filter](screenShots/interface-selection.png)
 
 
 
