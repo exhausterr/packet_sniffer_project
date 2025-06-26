@@ -89,15 +89,16 @@ class PacketSniffer:
             self.flush()
 
     def flush(self):
-        with open('packets_log.json', 'a') as jf:
+        with open('packets_log.json', 'a', encoding='utf-8') as jf:
             for row in self.cache:
-                json.dump(row, jf)
+                json.dump(row, jf, ensure_ascii=False)
                 jf.write('\n')
 
-        with open('packets_log.csv', 'a', newline='') as cf:
+        with open('packets_log.csv', 'a', newline='', encoding='utf-8') as cf:
             w = csv.writer(cf)
             for row in self.cache:
-                w.writerow([row['timestamp'], row['source_ip'], row['dest_ip'], row['protocol'], row['payload']])
+                safe_payload = row['payload'].encode('utf-8', errors='replace').decode('utf-8')
+                w.writerow([row['timestamp'], row['source_ip'], row['dest_ip'], row['protocol'], safe_payload])
 
         self.cache.clear()
 
@@ -257,7 +258,7 @@ class GUI:
                             threading.Thread(target=self.tcp_port_scan, args=(parts[1],), daemon=True).start()
                     else:
                         self.append_to_text_area(f"[TestServer] {addr[0]}: {decoded}")
-                        with open('tcp_log.txt', 'a') as log:
+                        with open('tcp_log.txt', 'a', encoding='utf-8') as log:
                             log.write(f"{addr[0]}: {decoded}\n")
                 except:
                     break
@@ -271,7 +272,7 @@ class GUI:
     def export_visible_log(self):
         data = self.text.get(1.0, END).strip()
         filename = f"visible_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-        with open(filename, 'w') as f:
+        with open(filename, 'w', encoding='utf-8') as f:
             f.write(data)
         self.append_to_text_area(f"[*] Exported visible log to {filename}")
 
