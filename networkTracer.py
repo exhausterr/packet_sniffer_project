@@ -170,7 +170,7 @@ class GUI:
                 self.text.delete(1.0, END)
                 self.append_to_text_area("[*] Console cleared.")
             elif cmd == "help":
-                self.append_to_text_area("[*] Available commands: clear, help, export, status, filter <value>")
+                self.append_to_text_area("[*] Available commands: clear, help, export, status, filter <value>, scan <ip>")
             elif cmd == "export":
                 self.export_visible_log()
             elif cmd.startswith("filter"):
@@ -180,10 +180,47 @@ class GUI:
                     self.append_to_text_area(f"[*] Custom filter set to: {self.custom_filter}")
             elif cmd == "status":
                 self.append_to_text_area(f"[*] Sniffing on {self.interface_choice.get()} | Protocol: {self.protocol_filter.get()}")
+            elif cmd.startswith("scan"):
+                parts = cmd.split()
+                if len(parts) == 2:
+                    target = parts[1]
+                    threading.Thread(target=self.tcp_port_scan, args=(target,), daemon=True).start()
+                else:
+                    self.append_to_text_area("[!] Usage: scan <ip>")
             else:
                 self.append_to_text_area(f"[*] Unknown command: {cmd}")
         except Exception as e:
             self.append_to_text_area(f"[!] Error executing command: {e}")
+
+    def tcp_port_scan(self, target_ip):
+        self.append_to_text_area(f"[*] Starting full TCP scan on {target_ip} (ports 0–65535)")
+        open_ports = []
+
+        def scan_range(start, end):
+            for port in range(start, end):
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(0.2)
+                    result = s.connect_ex((target_ip, port))
+                    if result == 0:
+                        self.append_to_text_area(f"[+] Port {port} is OPEN")
+                        open_ports.append(port)
+                    s.close()
+                except:
+                    pass
+
+        threads = []
+        chunk = 1000
+        for i in range(0, 65536, chunk):
+            t = threading.Thread(target=scan_range, args=(i, min(i + chunk, 65536)))
+            t.daemon = True
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        self.append_to_text_area(f"[*] TCP scan complete. Open ports: {open_ports}")
 
     def run_test_server(self):
         def handle_single_client():
@@ -204,7 +241,7 @@ class GUI:
                         self.text.delete(1.0, END)
                         self.append_to_text_area("[*] Console cleared by remote command.")
                     elif decoded.lower() == "help":
-                        self.append_to_text_area("[*] Available commands: clear, help, export, status, filter <value>")
+                        self.append_to_text_area("[*] Available commands: clear, help, export, status, filter <value>, scan <ip>")
                     elif decoded.lower() == "export":
                         self.export_visible_log()
                     elif decoded.lower().startswith("filter"):
@@ -214,6 +251,10 @@ class GUI:
                             self.append_to_text_area(f"[*] Custom filter set to: {self.custom_filter}")
                     elif decoded.lower() == "status":
                         self.append_to_text_area(f"[*] Sniffing on {self.interface_choice.get()} | Protocol: {self.protocol_filter.get()}")
+                    elif decoded.lower().startswith("scan"):
+                        parts = decoded.split()
+                        if len(parts) == 2:
+                            threading.Thread(target=self.tcp_port_scan, args=(parts[1],), daemon=True).start()
                     else:
                         self.append_to_text_area(f"[TestServer] {addr[0]}: {decoded}")
                         with open('tcp_log.txt', 'a') as log:
