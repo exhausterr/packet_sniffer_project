@@ -11,11 +11,13 @@ This is a cross-platform packet sniffer tool built with Python and Tkinter for e
 - Real-time packet capture
 - GUI with live scrollable output
 - Interface and protocol filter selection
-- Command-line input (`clear`, `status`, `help`, `filter`, `export`)
+- Command-line input (`clear`, `status`, `help`, `filter`, `export`, `scan <ip>`)
+- Full TCP port scanner (ports 0–65535)
 - Logging to JSON, CSV, and TXT
 - Built-in test TCP server for safe traffic simulation
 - Cross-platform support (Windows/Linux)
 - Minimal dependencies
+
 
 ---
 
@@ -36,13 +38,15 @@ python networkTracer.py
 sudo python3 networkTracer.py
 ```
 ## 🧪 Built-in Commands
-| Command        | Description                               |
-| -------------- | ----------------------------------------- |
-| clear          | Clears the GUI console                    |
-| status         | Shows current interface and filter status |
-| help           | Lists available commands                  |
-| export         | Exports visible log to .txt               |
-| filter <value> | Filters packets by IP or payload keyword  |
+| Command        | Description                                                 |
+| -------------- | ----------------------------------------------------------- |
+| `clear`        | Clears the GUI console                                      |
+| `status`       | Shows current interface and filter status                   |
+| `help`         | Lists available commands                                    |
+| `export`       | Exports visible log to `.txt`                               |
+| `filter <val>` | Filters packets by IP or payload keyword                    |
+| `scan <ip>`    | Performs a full TCP port scan on the specified IP (0–65535) |
+
 
 ## 🌐 Logging
 | File                 | Description                          |
@@ -61,7 +65,7 @@ Accepts 1 client connection
 
 Logs all received messages to tcp_log.txt
 
-Accepts clear, status, export, help, filter <value>
+Accepts clear, status, export, help, filter, and scan <ip>
 
 ## ⚠️ Legal Use
 This tool is intended for educational use only. Do not use it on networks without explicit permission. The author is not responsible for any misuse.
