@@ -10,7 +10,7 @@ from datetime import datetime
 from tkinter import Tk, Label, Button, Text, Scrollbar, END, messagebox, Frame, StringVar, OptionMenu, Entry
 import psutil
 
-IS_WINDOWS = platform.system().lower().startswith("win")
+IS_WINDOWS = platform.system().lower().startswith("win")  # platform check
 
 class PacketSniffer:
     def __init__(self, gui, iface):
@@ -18,19 +18,19 @@ class PacketSniffer:
         self.iface = iface
         self.sniffing = False
         self.cache = []
-        self.flush_after = 50
+        self.flush_after = 50  # flush logs after 50 packets
 
-        if IS_WINDOWS:
+        if IS_WINDOWS:  # windows socket setup
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
             local_ip = socket.gethostbyname(socket.gethostname())
             self.sock.bind((local_ip, 0))
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
             self.sock.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
-        else:
+        else:  # linux socket setup
             self.sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(3))
             self.sock.bind((iface, 0))
 
-    def start(self):
+    def start(self):  # capture loop
         self.sniffing = True
         while self.sniffing:
             try:
@@ -39,39 +39,39 @@ class PacketSniffer:
             except Exception as err:
                 self.gui.append_to_text_area(f"[!] Error: {err}")
 
-    def stop(self):
+    def stop(self):  # stop capture
         self.sniffing = False
         if IS_WINDOWS:
             self.sock.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
 
-    def handle(self, raw):
+    def handle(self, raw):  # handle packet data
         if IS_WINDOWS:
-            iphdr = raw[0:20]
+            iphdr = raw[0:20]  # no ethernet header
         else:
             if len(raw) < 34:
-                return
+                return  # junk packet
             eth_type = struct.unpack('!H', raw[12:14])[0]
-            if eth_type != 0x0800:
+            if eth_type != 0x0800:  # not IPv4
                 return
-            raw = raw[14:]
+            raw = raw[14:]  # skip ethernet
             iphdr = raw[0:20]
 
-        iph = struct.unpack('!BBHHHBBH4s4s', iphdr)
+        iph = struct.unpack('!BBHHHBBH4s4s', iphdr)  # parse IP header
         ihl = (iph[0] & 0xF) * 4
         src = socket.inet_ntoa(iph[8])
         dst = socket.inet_ntoa(iph[9])
         proto = iph[6]
 
-        proto_names = {1: 'ICMP', 6: 'TCP', 17: 'UDP'}
+        proto_names = {1: 'ICMP', 6: 'TCP', 17: 'UDP'}  # map protocol numbers
         name = proto_names.get(proto, str(proto))
 
-        payload = raw[ihl:]
+        payload = raw[ihl:]  # skip header
         try:
             readable = payload.decode(errors='ignore')
         except:
             readable = "<unreadable>"
 
-        info = {
+        info = {  # packet info dict
             'timestamp': datetime.now().isoformat(),
             'source_ip': src,
             'dest_ip': dst,
@@ -86,9 +86,9 @@ class PacketSniffer:
                 self.gui.append_to_text_area(f"[{info['timestamp']}] {src} -> {dst} | {name}")
 
         if len(self.cache) >= self.flush_after:
-            self.flush()
+            self.flush()  # write to files
 
-    def flush(self):
+    def flush(self):  # dump to JSON + CSV
         with open('packets_log.json', 'a', encoding='utf-8') as jf:
             for row in self.cache:
                 json.dump(row, jf, ensure_ascii=False)
@@ -144,11 +144,11 @@ class GUI:
 
         self.sniffer = None
 
-    def append_to_text_area(self, msg):
+    def append_to_text_area(self, msg):  # print in GUI
         self.text.insert(END, msg + "\n")
         self.text.see(END)
 
-    def start_sniffer(self):
+    def start_sniffer(self):  # init sniffer
         messagebox.showinfo("Reminder", "Use networks you have permission to inspect.")
         iface = self.interface_choice.get()
         self.sniffer = PacketSniffer(self, iface)
@@ -157,12 +157,12 @@ class GUI:
         t.start()
         self.append_to_text_area(f"[*] Sniffing on {iface}...")
 
-    def stop_sniffer(self):
+    def stop_sniffer(self):  # stop sniffer
         if self.sniffer:
             self.sniffer.stop()
             self.append_to_text_area("[*] Sniffing stopped.")
 
-    def handle_local_command(self, event):
+    def handle_local_command(self, event):  # cmd bar logic
         try:
             cmd = self.command_entry.get().strip().lower()
             self.command_entry.delete(0, END)
@@ -193,7 +193,7 @@ class GUI:
         except Exception as e:
             self.append_to_text_area(f"[!] Error executing command: {e}")
 
-    def tcp_port_scan(self, target_ip):
+    def tcp_port_scan(self, target_ip):  # port scan logic
         self.append_to_text_area(f"[*] Starting full TCP scan on {target_ip} (ports 0–65535)")
         open_ports = []
 
@@ -223,7 +223,7 @@ class GUI:
 
         self.append_to_text_area(f"[*] TCP scan complete. Open ports: {open_ports}")
 
-    def run_test_server(self):
+    def run_test_server(self):  # test server
         def handle_single_client():
             s = socket.socket()
             s.bind(('0.0.0.0', 9999))
@@ -269,7 +269,7 @@ class GUI:
         t.daemon = True
         t.start()
 
-    def export_visible_log(self):
+    def export_visible_log(self):  # dump GUI output to file
         data = self.text.get(1.0, END).strip()
         filename = f"visible_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         with open(filename, 'w', encoding='utf-8') as f:
